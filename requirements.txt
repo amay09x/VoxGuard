@@ -1,0 +1,4 @@
+streamlit
+google-genai
+azure-cognitiveservices-speech
+python-dotenv
