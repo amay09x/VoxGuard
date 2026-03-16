@@ -7,31 +7,26 @@ from google import genai
 from dotenv import load_dotenv
 
 # ── Environment & API Setup ───────────────────────────────────────────────────
-# Load local .env if it exists. On Streamlit Cloud, it will use st.secrets.
 load_dotenv()
 
-SPEECH_KEY = os.environ.get("AZURE_SPEECH_KEY") or st.secrets.get("AZURE_SPEECH_KEY")
+SPEECH_KEY    = os.environ.get("AZURE_SPEECH_KEY")    or st.secrets.get("AZURE_SPEECH_KEY")
 SPEECH_REGION = os.environ.get("AZURE_SPEECH_REGION") or st.secrets.get("AZURE_SPEECH_REGION")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")     or st.secrets.get("GEMINI_API_KEY")
 
-# Initialize Gemini
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 # ── Backend AI Functions ──────────────────────────────────────────────────────
 def transcribe_audio(file_path):
     speech_config = speechsdk.SpeechConfig(subscription=SPEECH_KEY, region=SPEECH_REGION)
     speech_config.speech_recognition_language = "en-US"
-    audio_config = speechsdk.audio.AudioConfig(filename=file_path)
-    speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_config)
-    
-    result = speech_recognizer.recognize_once_async().get()
-    
+    audio_config  = speechsdk.audio.AudioConfig(filename=file_path)
+    recognizer    = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_config)
+    result        = recognizer.recognize_once_async().get()
     if result.reason == speechsdk.ResultReason.RecognizedSpeech:
         return result.text
     return None
 
 def analyze_intent(transcript):
-    # Prompt structured specifically to extract data for the UI
     prompt = f"""
     You are an expert cybersecurity analyst. Read this audio transcript and look for signs of a social engineering scam.
     You MUST format your exact response as follows:
@@ -40,10 +35,7 @@ def analyze_intent(transcript):
 
     Transcript: "{transcript}"
     """
-    response = client.models.generate_content(
-        model='gemini-2.5-flash',
-        contents=prompt
-    )
+    response = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
     return response.text
 
 # ── Page config ───────────────────────────────────────────────────────────────
@@ -81,8 +73,6 @@ html, body, [data-testid="stAppViewContainer"] {
     color: var(--text) !important;
     font-family: var(--font-mono) !important;
 }
-
-/* Scanlines */
 [data-testid="stAppViewContainer"]::before {
     content: "";
     position: fixed;
@@ -182,9 +172,9 @@ html, body, [data-testid="stAppViewContainer"] {
     align-items: flex-start;
     background: var(--bg2);
 }
-.step-list li:nth-child(odd)  { background: var(--bg3); }
-.step-list li:last-child       { border-bottom: none; }
-.step-list li:hover            { background: rgba(10,255,96,0.04); }
+.step-list li:nth-child(odd) { background: var(--bg3); }
+.step-list li:last-child      { border-bottom: none; }
+.step-list li:hover           { background: rgba(10,255,96,0.04); }
 .step-num {
     font-family: var(--font-hud);
     color: var(--neon);
@@ -192,6 +182,35 @@ html, body, [data-testid="stAppViewContainer"] {
     font-size: 0.62rem;
     min-width: 22px;
     padding-top: 2px;
+}
+
+/* ── Sys-info tiles (left column, below mission brief) ── */
+.sysinfo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.7rem;
+    margin-top: 1.1rem;
+}
+.sysinfo-tile {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.85rem 1rem;
+    text-align: center;
+}
+.sysinfo-tile .si-label {
+    font-family: var(--font-hud);
+    font-size: 0.48rem;
+    letter-spacing: 0.2em;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 0.35rem;
+}
+.sysinfo-tile .si-value {
+    font-family: var(--font-hud);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
 }
 
 /* ── Console prompt ── */
@@ -284,7 +303,7 @@ html, body, [data-testid="stAppViewContainer"] {
     box-shadow: 0 0 28px rgba(10,255,96,0.35), inset 0 0 22px rgba(10,255,96,0.07) !important;
 }
 
-/* ── Metric grid ── */
+/* ── Metric grid (scan results only) ── */
 .metric-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -360,9 +379,9 @@ html, body, [data-testid="stAppViewContainer"] {
     margin-top: 0.9rem;
     line-height: 1.55;
 }
-.vg-alert-danger  { border-color: var(--red);  background: rgba(255,62,94,0.07);  color: var(--red); }
-.vg-alert-warning { border-color: var(--amber); background: rgba(255,183,0,0.07); color: var(--amber); }
-.vg-alert-success { border-color: var(--neon); background: rgba(10,255,96,0.05);  color: var(--neon); }
+.vg-alert-danger  { border-color: var(--red);   background: rgba(255,62,94,0.07);  color: var(--red); }
+.vg-alert-warning { border-color: var(--amber);  background: rgba(255,183,0,0.07); color: var(--amber); }
+.vg-alert-success { border-color: var(--neon);  background: rgba(10,255,96,0.05);  color: var(--neon); }
 
 /* ── Spinner ── */
 [data-testid="stSpinner"] p {
@@ -408,8 +427,11 @@ html, body, [data-testid="stAppViewContainer"] {
     transition: all 0.2s ease;
 }
 .social-link.gh { color: var(--neon); border-color: var(--border); }
+.social-link.gh:hover { border-color: var(--neon); background: rgba(10,255,96,0.06); box-shadow: 0 0 12px rgba(10,255,96,0.2); text-shadow: 0 0 8px var(--neon); }
 .social-link.li { color: var(--cyan); border-color: var(--border2); }
+.social-link.li:hover { border-color: var(--cyan); background: rgba(0,229,255,0.06); box-shadow: 0 0 12px rgba(0,229,255,0.2); text-shadow: 0 0 8px var(--cyan); }
 .social-link.ig { color: #ff79c6; border-color: rgba(255,121,198,0.2); }
+.social-link.ig:hover { border-color: #ff79c6; background: rgba(255,121,198,0.06); box-shadow: 0 0 12px rgba(255,121,198,0.2); text-shadow: 0 0 8px #ff79c6; }
 .social-link svg { width: 13px; height: 13px; flex-shrink: 0; }
 
 /* ── Footer ── */
@@ -455,6 +477,10 @@ st.markdown("""
 # ── Columns ───────────────────────────────────────────────────────────────────
 left, right = st.columns([1.08, 1], gap="large")
 
+# ════════════════════════════════════════════════════
+# LEFT — Mission brief + static system info only
+# NO metric tiles here — those live in the right column
+# ════════════════════════════════════════════════════
 with left:
     st.markdown("""
     <div class="vg-panel">
@@ -468,25 +494,29 @@ with left:
         </ul>
     </div>
 
-    <div class="metric-grid">
-        <div class="metric-tile">
-            <div class="m-label">Risk Score</div>
-            <div class="m-value color-red">--</div>
-            <div class="m-unit">awaiting scan</div>
+    <div class="sysinfo-grid">
+        <div class="sysinfo-tile">
+            <div class="si-label">Speech Engine</div>
+            <div class="si-value" style="color:var(--cyan); text-shadow:0 0 8px var(--cyan);">AZURE</div>
         </div>
-        <div class="metric-tile">
-            <div class="m-label">Deepfake Conf.</div>
-            <div class="m-value color-amber">--</div>
-            <div class="m-unit">awaiting scan</div>
+        <div class="sysinfo-tile">
+            <div class="si-label">AI Engine</div>
+            <div class="si-value" style="color:var(--neon); text-shadow:0 0 8px var(--neon);">GEMINI</div>
         </div>
-        <div class="metric-tile">
-            <div class="m-label">Scan Status</div>
-            <div class="m-value color-cyan" style="font-size:0.95rem;padding-top:0.55rem;">IDLE</div>
-            <div class="m-unit">ready</div>
+        <div class="sysinfo-tile">
+            <div class="si-label">Accepted Format</div>
+            <div class="si-value" style="color:var(--dim);">.WAV</div>
+        </div>
+        <div class="sysinfo-tile">
+            <div class="si-label">Model Version</div>
+            <div class="si-value" style="color:var(--dim);">v1.0</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
+# ════════════════════════════════════════════════════
+# RIGHT — Audio input + scan results (metrics appear here ONLY)
+# ════════════════════════════════════════════════════
 with right:
     st.markdown("""
     <div class="vg-panel vg-panel-cyan">
@@ -509,12 +539,10 @@ with right:
 
     if analyze_clicked:
         if uploaded_file is not None:
-            # Save the file temporarily so Azure can read it
             temp_audio_path = "temp_target.wav"
             with open(temp_audio_path, "wb") as f:
                 f.write(uploaded_file.getbuffer())
 
-            # Execution Pipeline
             with st.spinner("▶  STAGE 1 — Extracting transcript via Azure Cognitive Services..."):
                 transcript = transcribe_audio(temp_audio_path)
 
@@ -523,36 +551,32 @@ with right:
                     raw_analysis = analyze_intent(transcript)
 
                 with st.spinner("▶  STAGE 3 — Computing composite Risk Score..."):
-                    # Parse the exact data out of Gemini's response
                     try:
-                        score_match = re.search(r'SCORE:\s*(\d+)', raw_analysis)
-                        risk_score = int(score_match.group(1)) if score_match else 50
-                        
+                        score_match  = re.search(r'SCORE:\s*(\d+)', raw_analysis)
+                        risk_score   = int(score_match.group(1)) if score_match else 50
                         analysis_split = raw_analysis.split('ANALYSIS:')
                         report_details = analysis_split[1].strip() if len(analysis_split) > 1 else raw_analysis
-                    except:
-                        risk_score = 85
+                    except Exception:
+                        risk_score     = 85
                         report_details = raw_analysis
 
-                    # Visual logic for the UI based on the score
-                    deepfake_conf = max(0, risk_score - 4) # Approximation for UI visual
-                    bar_color = "#ff3e5e" if risk_score >= 70 else "#ffb700" if risk_score >= 40 else "#0aff60"
-                    
-                    status_text = "CRITICAL" if risk_score >= 70 else "WARNING" if risk_score >= 40 else "SAFE"
-                    alert_class = "vg-alert-danger" if risk_score >= 70 else "vg-alert-warning" if risk_score >= 40 else "vg-alert-success"
-                    alert_icon = "⚠ HIGH THREAT DETECTED" if risk_score >= 70 else "⚠ CAUTION" if risk_score >= 40 else "✓ CLEAR"
+                    deepfake_conf = max(0, risk_score - 4)
+                    bar_color     = "#ff3e5e" if risk_score >= 70 else "#ffb700" if risk_score >= 40 else "#0aff60"
+                    status_text   = "CRITICAL" if risk_score >= 70 else "WARNING" if risk_score >= 40 else "SAFE"
+                    alert_class   = "vg-alert-danger" if risk_score >= 70 else "vg-alert-warning" if risk_score >= 40 else "vg-alert-success"
+                    alert_icon    = "⚠ HIGH THREAT DETECTED" if risk_score >= 70 else "⚠ CAUTION" if risk_score >= 40 else "✓ CLEAR"
 
-                # Render dynamic Results
+                # Single metric grid — right column only, shown once after scan
                 st.markdown(f"""
                 <div class="metric-grid">
                     <div class="metric-tile">
                         <div class="m-label">Risk Score</div>
-                        <div class="m-value color-red" style="color:{bar_color}; text-shadow:0 0 14px {bar_color};">{risk_score}%</div>
+                        <div class="m-value" style="color:{bar_color}; text-shadow:0 0 14px {bar_color};">{risk_score}%</div>
                         <div class="m-unit">{status_text}</div>
                     </div>
                     <div class="metric-tile">
                         <div class="m-label">Deepfake Conf.</div>
-                        <div class="m-value color-amber" style="color:{bar_color}; text-shadow:0 0 14px {bar_color};">{deepfake_conf}%</div>
+                        <div class="m-value" style="color:{bar_color}; text-shadow:0 0 14px {bar_color};">{deepfake_conf}%</div>
                         <div class="m-unit">CALCULATED</div>
                     </div>
                     <div class="metric-tile">
@@ -561,22 +585,23 @@ with right:
                         <div class="m-unit">complete</div>
                     </div>
                 </div>
+
                 <div class="risk-bar-wrap">
                     <div class="risk-bar-label">Composite Risk Level — {risk_score}%</div>
                     <div class="risk-bar-bg">
                         <div class="risk-bar-fill"
-                             style="width:{risk_score}%;background:{bar_color};
+                             style="width:{risk_score}%; background:{bar_color};
                                     box-shadow:0 0 10px {bar_color};"></div>
                     </div>
                 </div>
+
                 <div class="vg-alert {alert_class}">
                     <b>{alert_icon}</b><br><br>
                     {report_details}<br><br>
                     <i>Transcript captured: "{transcript}"</i>
                 </div>
                 """, unsafe_allow_html=True)
-                
-                # Cleanup temp file
+
                 if os.path.exists(temp_audio_path):
                     os.remove(temp_audio_path)
 
@@ -593,25 +618,31 @@ with right:
 # ── Social links + Footer ─────────────────────────────────────────────────────
 st.markdown("""
 <div class="social-bar">
-    <span class="social-label">// BUILT BY</span>
-    <a class="social-link gh" href="https://github.com/amay09x" target="_blank">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
-        </svg>GITHUB
-    </a>
-    <a class="social-link li" href="https://www.linkedin.com/in/amay-sharma-24690136b" target="_blank">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-        </svg>LINKEDIN
-    </a>
-    <a class="social-link ig" href="https://www.instagram.com/probablyamayy/" target="_blank">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/>
-        </svg>INSTAGRAM
-    </a>
+<span class="social-label">// BUILT BY</span>
+
+<a class="social-link gh" href="https://github.com/amay09x" target="_blank">
+<svg viewBox="0 0 24 24" fill="currentColor">
+<path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+</svg>
+GITHUB
+</a>
+
+<a class="social-link li" href="https://www.linkedin.com/in/amay-sharma-24690136b" target="_blank">
+<svg viewBox="0 0 24 24" fill="currentColor">
+<path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+</svg>
+LINKEDIN
+</a>
+
+<a class="social-link ig" href="https://www.instagram.com/probablyamayy/" target="_blank">
+<svg viewBox="0 0 24 24" fill="currentColor">
+<path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/>
+</svg>
+INSTAGRAM
+</a>
 </div>
 
 <div class="vg-footer">
-    VOXGUARD // AI THREAT ANALYSIS SYSTEM // HACKATHON BUILD // AZURE + GEMINI ENGINE ACTIVE
+VOXGUARD // AI THREAT ANALYSIS SYSTEM // HACKATHON BUILD // AZURE + GEMINI ENGINE ACTIVE
 </div>
 """, unsafe_allow_html=True)
